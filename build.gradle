@@ -1,13 +1,16 @@
 // https://docs.spring.io/spring-boot/docs/2.4.5/reference/html/dependency-versions.html#dependency-versions
 buildscript {
-    ext.groupId = "io.github.syaku"
-    ext.versionName = "1.0.0-SNAPSHOT"
-    ext.springBootVersion = "2.4.5"
-    ext.junitVersion = "5.7.2"
-    ext.lombokVersion = "1.18.20"
-    ext.restDocsVersion = "2.0.5.RELEASE"
-    ext.jacksonVersion = "2.11.4"
-    ext.h2Version = "1.4.200"
+    ext {
+        groupId = "io.github.syaku"
+        versionName = "1.0.0-SNAPSHOT"
+        springBootVersion = "2.4.5"
+        junitVersion = "5.7.2"
+        lombokVersion = "1.18.20"
+        restDocsVersion = "2.0.5.RELEASE"
+        jacksonVersion = "2.11.4"
+        h2Version = "1.4.200"
+        springAuthorizationServerVersion = "0.2.0"
+    }
 
     repositories {
         maven {
@@ -50,6 +53,9 @@ idea {
 }
 
 repositories {
+    maven {
+        url "https://repo.spring.io/release"
+    }
     mavenCentral()
 }
 
@@ -95,6 +101,8 @@ dependencies {
 
     testImplementation "com.h2database:h2:${h2Version}"
     compileOnly "com.h2database:h2:${h2Version}"
+
+    implementation "org.springframework.security:spring-security-oauth2-authorization-server:${springAuthorizationServerVersion}"
 }
 
 // <------- RestDocs & Asciidoctor
@@ -164,7 +172,7 @@ jar {
 
 task createBuildYml {
     doLast {
-        println "version: ${platformVersion}\n" +
+        println "version: ${versionName}\n" +
             "artifactId: ${rootProject.name}"
     }
 }
