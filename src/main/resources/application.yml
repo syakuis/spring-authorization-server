@@ -19,6 +19,7 @@ logging:
     root: info
     org.springframework: info
     org.springframework.web: info
+    org.springframework.security: debug
     io.github.syakuis: trace
     org.hibernate: info
     org.hibernate.SQL: trace

@@ -1,4 +1,4 @@
-package io.github.syakuis.config.support;
+package io.github.syakuis.authorization.configuration.support;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;

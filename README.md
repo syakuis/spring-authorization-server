@@ -1,4 +1,9 @@
-# Spring Framework Template for Gradle
+# Spring Authorization Server
+
+스프링팀의 차세대 인증 서버를 사용하여 계정, 인증, 인가를 구현한다.
+
+## 참고
+- https://github.com/spring-projects/spring-authorization-server
 
 ## Installing Gradle 6.5
 
