@@ -1,15 +1,16 @@
-// https://docs.spring.io/spring-boot/docs/2.4.5/reference/html/dependency-versions.html#dependency-versions
 buildscript {
     ext {
         groupId = "io.github.syaku"
         versionName = "1.0.0-SNAPSHOT"
-        springBootVersion = "2.4.5"
-        junitVersion = "5.7.2"
-        lombokVersion = "1.18.20"
-        restDocsVersion = "2.0.5.RELEASE"
-        jacksonVersion = "2.11.4"
+
+        springBootVersion = "2.7.3"
+        springCloudVersion = "2021.0.3"
+        jacksonVersion = '2.13.3'
+        lombokVersion = '1.18.24'
+
         h2Version = "1.4.200"
-        springAuthorizationServerVersion = "0.2.0"
+
+        springAuthorizationServerVersion = '1.0.0'
     }
 
     repositories {
@@ -20,37 +21,23 @@ buildscript {
     }
 
     dependencies {
-        classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.7.1"
-        classpath "io.franzbecker:gradle-lombok:3.1.0"
-        classpath "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.8.RELEASE"
-        classpath "org.asciidoctor:asciidoctor-gradle-plugin:1.5.3"
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
+        classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.7.1"
     }
 }
 
 wrapper {
-    gradleVersion = "6.5"
+    gradleVersion = "7.5.1"
 }
 
-apply plugin: "java"
 apply plugin: "java-library"
 apply plugin: "application"
-apply plugin: "idea"
-apply plugin: "io.franzbecker.gradle-lombok"
 apply plugin: "org.springframework.boot"
 apply plugin: "io.spring.dependency-management"
-apply plugin: "org.asciidoctor.convert"
 apply plugin: "org.sonarqube"
 apply plugin: "jacoco"
 apply plugin: "maven-publish"
-
-idea {
-    module {
-        inheritOutputDirs = true
-        outputDir = compileJava.destinationDir
-        testOutputDir = compileTestJava.destinationDir
-    }
-}
 
 repositories {
     maven {
@@ -62,62 +49,59 @@ repositories {
 group groupId
 version versionName
 
-sourceCompatibility = JavaVersion.VERSION_11
-targetCompatibility = JavaVersion.VERSION_11
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
 
 compileJava.options.encoding = 'UTF-8'
 
 configurations {
     implementation.exclude module: "spring-boot-starter-tomcat"
-    testImplementation.exclude group: "junit", module: "junit"
 }
 
 processResources {
-    filesMatching('application.yml') {
+    filesMatching('*.yml') {
         expand(project.properties)
     }
 }
 
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
 dependencies {
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
+
     compileOnly "org.projectlombok:lombok:${lombokVersion}"
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
     testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
     testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
-    asciidoctor "org.springframework.restdocs:spring-restdocs-asciidoctor:${restDocsVersion}"
-    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:${restDocsVersion}"
-
-    implementation "com.fasterxml.jackson.datatype:jackson-datatype-hibernate5:${jacksonVersion}"
-
-    implementation "org.springframework.boot:spring-boot-starter-data-jpa"
-
     compileOnly "org.springframework.boot:spring-boot-configuration-processor"
     implementation "org.springframework.boot:spring-boot-starter-validation"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-hibernate5"
 
-    implementation "org.springframework.boot:spring-boot-starter-undertow"
     implementation "org.springframework.boot:spring-boot-starter-web"
-    // or implementation "org.springframework.boot:spring-boot-starter"
+    implementation "org.springframework.boot:spring-boot-starter-undertow"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
 
+    implementation "org.springframework.boot:spring-boot-starter-data-jpa"
+    implementation 'org.mariadb.jdbc:mariadb-java-client:3.0.6'
     testImplementation "com.h2database:h2:${h2Version}"
     compileOnly "com.h2database:h2:${h2Version}"
 
+    // spring security authorization server
+    implementation "org.springframework.security:spring-security-oauth2-core"
     implementation "org.springframework.security:spring-security-oauth2-authorization-server:${springAuthorizationServerVersion}"
-}
 
-// <------- RestDocs & Asciidoctor
-def snippetsDir = file("${buildDir}/generated-snippets")
+    // test-container
+    testImplementation "org.springframework.cloud:spring-cloud-starter-bootstrap"
+    testImplementation "com.playtika.testcontainers:embedded-redis:2.2.9"
 
-asciidoctor {
-    attributes "snippets": snippetsDir
-    inputs.dir snippetsDir
-    dependsOn test
+    // Mac M1
+    runtimeOnly 'io.netty:netty-resolver-dns-native-macos:4.1.77.Final:osx-aarch_64'
 }
-
-asciidoctor.doFirst {
-    delete file('src/main/resources/static/docs')
-}
-// ------- RestDocs & Asciidoctor ->
 
 sonarqube {
     properties {
@@ -134,7 +118,6 @@ sonarqube {
 }
 
 test {
-    outputs.dir snippetsDir
     useJUnitPlatform()
     testLogging {
         events "passed", "skipped", "failed"
@@ -142,37 +125,16 @@ test {
     systemProperty 'spring.profiles.active', 'test'
 }
 
-task copyAsciidoc(type: Copy) {
-    dependsOn asciidoctor
-    from file("${buildDir}/asciidoc/html5")
-    into file("src/main/resources/static/docs")
-}
-
-build {
-    dependsOn copyAsciidoc
-}
-
 application {
-    mainClass = "${groupId}.Application"
+    mainClass = "io.github.syaku.authorization.AuthorizationServerApplication"
 }
 
 
 bootJar {
-    enabled true
+    enabled = true
     launchScript()
-    dependsOn asciidoctor
-    from ("${asciidoctor.outputDir}/html5") {
-        into "BOOT-INF/classes/static/docs"
-    }
 }
 
 jar {
     enabled false
-}
-
-task createBuildYml {
-    doLast {
-        println "version: ${versionName}\n" +
-            "artifactId: ${rootProject.name}"
-    }
 }

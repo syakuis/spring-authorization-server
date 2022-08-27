@@ -1,0 +1,8 @@
+embedded:
+  containers:
+    forceShutdown: false
+    enabled: true
+  redis:
+    enabled: false
+    dockerImage: redis:7.0.3
+    requirepass: false
